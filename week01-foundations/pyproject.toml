@@ -1,0 +1,9 @@
+[project]
+name = "agentic-app"
+version = "0.1.0"
+description = "Week 1: professional Python project foundations"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
