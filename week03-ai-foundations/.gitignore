@@ -1,0 +1,13 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+logs/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Generated files (they are rebuilt by running the pipeline)
+data/processed/*
+!data/processed/.gitkeep
+models/*
+!models/.gitkeep

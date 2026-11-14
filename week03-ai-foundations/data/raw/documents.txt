@@ -1,0 +1,4 @@
+Students can register courses through the student portal.
+The examination office publishes examination schedules.
+The finance office handles tuition fee issues.
+The library provides digital research resources.

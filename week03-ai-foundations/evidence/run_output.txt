@@ -1,0 +1,205 @@
+
+======================================================================
+Phase 01 - ML: training and inference
+======================================================================
+Trained on 4 examples; labels: ['negative', 'positive']
+Inference: 'I really love this course' -> positive
+Inference: 'I really hate this course' -> negative
+
+Phase 04 - comparing three classifiers (tiny dataset: results are noisy)
+Test examples (the models never saw these during training):
+  'I did not enjoy this' (true: negative) | words unseen in training: ['did', 'not', 'enjoy']
+  'This is fantastic' (true: positive) | words unseen in training: ['fantastic']
+
+--- LogisticRegression ---
+Accuracy: 0.0
+Predictions: ['positive', 'negative'] | true labels: ['negative', 'positive']
+              precision    recall  f1-score   support
+
+    negative       0.00      0.00      0.00       1.0
+    positive       0.00      0.00      0.00       1.0
+
+    accuracy                           0.00       2.0
+   macro avg       0.00      0.00      0.00       2.0
+weighted avg       0.00      0.00      0.00       2.0
+
+New text 'I really love this' -> positive
+
+--- LinearSVC ---
+Accuracy: 0.0
+Predictions: ['positive', 'negative'] | true labels: ['negative', 'positive']
+              precision    recall  f1-score   support
+
+    negative       0.00      0.00      0.00       1.0
+    positive       0.00      0.00      0.00       1.0
+
+    accuracy                           0.00       2.0
+   macro avg       0.00      0.00      0.00       2.0
+weighted avg       0.00      0.00      0.00       2.0
+
+New text 'I really love this' -> positive
+
+--- MultinomialNB ---
+Accuracy: 0.5
+Predictions: ['negative', 'negative'] | true labels: ['negative', 'positive']
+              precision    recall  f1-score   support
+
+    negative       0.50      1.00      0.67         1
+    positive       0.00      0.00      0.00         1
+
+    accuracy                           0.50         2
+   macro avg       0.25      0.50      0.33         2
+weighted avg       0.25      0.50      0.33         2
+
+New text 'I really love this' -> positive
+
+Note: a model cannot use words it never saw in training, so a test sentence
+full of new words is close to a guess. More (and more varied) data fixes this.
+
+Accuracy summary: {'LogisticRegression': 0.0, 'LinearSVC': 0.0, 'MultinomialNB': 0.5}
+
+======================================================================
+Phase 02 - Text preprocessing
+======================================================================
+'   I NEED HELP!!!   '                        -> 'i need help'
+'Hello,    WORLD!!'                           -> 'hello world'
+'What are the admission requirements?'        -> 'what are the admission requirements'
+'  Mixed\tCASE\nand   spaces...  '            -> 'mixed case and spaces'
+'I forgot my password!!!'                     -> 'i forgot my password'
+
+======================================================================
+Phase 03 - Simple tokenizers we write ourselves
+======================================================================
+Word tokens: ['agentic', 'ai', 'systems', 'can', 'use', 'tools'] | count: 6
+Character tokens: ['h', 'e', 'l', 'l', 'o']
+Character vocab: {'h': 0, 'e': 1, 'l': 2, 'o': 3} -> IDs: [0, 1, 2, 2, 3]
+Word IDs (all known):     [1, 2, 3, 4, 5]
+Word IDs (images=<UNK>):  [1, 2, 3, 4, 0]
+
+BPE idea: count neighbouring symbol pairs in 'low lower lowest'
+  ('l', 'o'): 3
+  ('o', 'w'): 3
+  ('w', 'e'): 2
+  ('e', 'r'): 1
+  -> the most frequent pairs get merged first (l+o -> lo, lo+w -> low ...)
+
+======================================================================
+Phase 03 - Pretrained tokenizers (BERT WordPiece vs GPT-2 byte-level BPE)
+======================================================================
+Original text: Large language models are powerful.
+Tokens:        ['large', 'language', 'models', 'are', 'powerful', '.']
+Token IDs:     [101, 2312, 2653, 4275, 2024, 3928, 1012, 102]
+Token count:   8
+Decoded:       [CLS] large language models are powerful. [SEP]
+
+Special tokens (BERT):
+  tokens: ['hello', 'world']
+  token_ids: [101, 7592, 2088, 102]
+  cls_token: [CLS]
+  sep_token: [SEP]
+  cls_token_id: 101
+  sep_token_id: 102
+
+Subword tokenization (rare words are split into pieces; ## = continuation):
+  'Playing with language models.' -> ['playing', 'with', 'language', 'models', '.']
+  'unbelievably uncharacteristic' -> ['un', '##bel', '##ie', '##va', '##bly', 'un', '##cha', '##rac', '##ter', '##istic']
+
+Compare tokenizers on: Artificial intelligence is transforming software engineering.
+  bert-base-uncased: 7 tokens -> ['artificial', 'intelligence', 'is', 'transforming', 'software', 'engineering', '.']
+  gpt2: 8 tokens -> ['Art', 'ificial', 'Ġintelligence', 'Ġis', 'Ġtransforming', 'Ġsoftware', 'Ġengineering', '.']
+
+Characters: 83 | Tokens: 11
+
+======================================================================
+Phase 03 - SentencePiece: train a tiny tokenizer of our own
+======================================================================
+Saved tokenizer model: /home/arhan/university/agentic-ai-course/week03-ai-foundations/models/my_tokenizer.model
+Original text: Artificial intelligence is changing software engineering.
+Pieces:        ['▁', 'A', 'r', 'ti', 'fi', 'ci', 'al', '▁intelligence', '▁i', 's', '▁', 'c', 'h', 'ang', 'ing', '▁', 's', 'o', 'f', 't', 'w', 'ar', 'e', '▁', 'e', 'n', 'g', 'i', 'n', 'e', 'er', 'ing', '.']   (the ▁ marks the start of a word)
+Token IDs:     [3, 32, 28, 20, 18, 19, 9, 25, 23, 4, 3, 47, 37, 17, 11, 3, 4, 8, 46, 13, 24, 12, 5, 3, 5, 14, 48, 22, 14, 5, 21, 11, 7]
+Token count:   33
+Decoded:       Artificial intelligence is changing software engineering.
+
+======================================================================
+Phase 04 - Support-message classifier (TF-IDF + Logistic Regression)
+======================================================================
+Cleaned 16 messages -> saved to data/processed/
+Messages per category: {'account': 4, 'technical': 4, 'finance': 4, 'admission': 4}
+
+Accuracy on unseen test messages: 0.75
+              precision    recall  f1-score   support
+
+     account       0.00      0.00      0.00         1
+   admission       1.00      1.00      1.00         1
+     finance       0.50      1.00      0.67         1
+   technical       1.00      1.00      1.00         1
+
+    accuracy                           0.75         4
+   macro avg       0.62      0.75      0.67         4
+weighted avg       0.62      0.75      0.67         4
+
+(Only 4 test messages, so this number is a rough guide, not a precise score.)
+
+Final model trained on all messages and saved to: /home/arhan/university/agentic-ai-course/week03-ai-foundations/models/support_classifier.joblib
+Inference on new messages:
+  'I cannot reset my password'                  -> account
+  'The server is not responding'                -> technical
+  'When does the admission start?'              -> admission
+  'I paid my tuition but it is not shown'       -> finance
+  'Where is my fee voucher?'                    -> finance
+  'My login is not working'                     -> technical
+
+Not every prediction will be right: with only 16 training messages the model leans on
+single words (for example, 'login' appears only in a technical example). More data helps.
+
+======================================================================
+Phase 05 - Embeddings and semantic similarity
+======================================================================
+Loading model sentence-transformers/all-MiniLM-L6-v2 (downloaded once, then cached)...
+Embedding shape (sentences x dimensions): (3, 384)
+
+Password similarity: 0.7220
+Weather similarity:  -0.0655
+-> the related pair should score clearly higher than the unrelated pair.
+   The exact numbers depend on the model; the ORDER is what matters.
+
+======================================================================
+Phase 06 - Semantic search over a small knowledge base
+======================================================================
+Indexing 4 documents (embeddings are computed once)...
+
+Query: Where can I register my courses?
+  0.7445 -> Students can register courses through the student portal.
+  0.3643 -> The examination office publishes examination schedules.
+  0.2885 -> The finance office handles tuition fee issues.
+  0.2072 -> The library provides digital research resources.
+
+Query: How do I pay my tuition?
+  0.5797 -> The finance office handles tuition fee issues.
+  0.3723 -> Students can register courses through the student portal.
+  0.1744 -> The examination office publishes examination schedules.
+  0.0556 -> The library provides digital research resources.
+
+Query: When are the exam dates?
+  0.6778 -> The examination office publishes examination schedules.
+  0.3150 -> Students can register courses through the student portal.
+  0.2473 -> The finance office handles tuition fee issues.
+  0.0473 -> The library provides digital research resources.
+
+Query: Where can I find research papers?
+  0.5020 -> The library provides digital research resources.
+  0.2291 -> The examination office publishes examination schedules.
+  0.1547 -> Students can register courses through the student portal.
+  0.0403 -> The finance office handles tuition fee issues.
+
+======================================================================
+Summary
+======================================================================
+  OK     sentiment
+  OK     clean
+  OK     tokens
+  OK     hf-tokens
+  OK     sentencepiece
+  OK     classify
+  OK     embeddings
+  OK     search

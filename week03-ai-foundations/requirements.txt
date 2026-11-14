@@ -1,0 +1,19 @@
+# Week 3 packages (the list from the instructor's lab, plus pytest).
+#
+# IMPORTANT: install PyTorch CPU-only FIRST (see README.md, step 2), otherwise
+# sentence-transformers downloads the huge CUDA build of PyTorch on Linux.
+# Do NOT run "pip freeze > requirements.txt" this week: it would write
+# "torch==x.y.z+cpu", which cannot be installed from PyPI.
+scikit-learn
+numpy
+pandas
+sentencepiece
+sentence-transformers
+pypdf
+python-docx
+openpyxl
+python-dotenv
+fastapi
+uvicorn
+pydantic
+pytest
